@@ -1,0 +1,13 @@
+version: '3.10'
+
+services:
+  api:
+    build: .
+    image: upload-videos
+    container_name: upload-videos-container
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
