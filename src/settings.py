@@ -2,5 +2,5 @@ AWS_S3_BUCKET_NAME = 'hack-fiap'
 AWS_REGION = 'us-east-1'
 AWS_ACCESS_KEY = 'AKIA3CMCCVYVNOZBNY5X'
 AWS_SECRET_KEY = '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'
-
-BASE_PATH = '/upload-video'
+HOST = '0.0.0.0'
+PORT = 8000
