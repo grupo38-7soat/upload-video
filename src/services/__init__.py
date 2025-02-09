@@ -1,5 +1,5 @@
-from src.services.upload_video import upload_video_router
+from src.services.file_upload import file_upload_router
 
 __all__ = (
-    'upload_video_router'
+    'file_upload_router'
 )
