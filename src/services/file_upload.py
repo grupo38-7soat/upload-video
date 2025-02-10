@@ -6,7 +6,8 @@ import boto3
 from fastapi import File, UploadFile, APIRouter, Form
 from fastapi.responses import JSONResponse
 from constants.settings import AWS_REGION, AWS_S3_BUCKET_NAME
-from src.utils.exceptions import handle_default_error_exception
+
+from utils.exceptions import handle_default_error_exception
 from utils.delete_folder import delete_folder
 
 file_upload_router = APIRouter()
@@ -25,7 +26,6 @@ sqs = boto3.client(
     aws_secret_access_key=os.getenv('SECRET_KEY')
 )
 
-
 @file_upload_router.post("/upload")
 async def upload_file(
     user: str = Form(...),
@@ -38,29 +38,38 @@ async def upload_file(
     os.makedirs(os.path.dirname(file_location), exist_ok=True)
 
     try:
+        # Salvar o arquivo temporariamente
         with open(file_location, "wb") as f:
             content = await file.read()
             f.write(content)
 
-        await upload_to_s3(file_location, file.filename)
-        message_id = await send_message_to_sqs(user, file.filename, start_time_for_cut_frames, end_time_for_cut_frames, skip_frame)
+        # Upload para S3 (sem await)
+        upload_to_s3(file_location, file.filename)
 
+        # Enviar mensagem para SQS (sem await)
+        message_id = send_message_to_sqs(user, file.filename, start_time_for_cut_frames, end_time_for_cut_frames, skip_frame)
+
+        # Responder antes de apagar o arquivo
         return JSONResponse(content={
             "message": f"Vídeo {file.filename} importado com sucesso. MessageId: {message_id}",
             "status_code": 200
         })
 
     except Exception as e:
+        print(f"Erro no upload do arquivo {file.filename}. Mensagem: {e}")
         handle_default_error_exception(f"Erro no upload do arquivo {file.filename}. Mensagem: {e}")
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
     finally:
-        delete_folder(['uploaded_files'])
+        # Só apaga a pasta se o upload foi bem-sucedido
+        if os.path.exists(file_location):
+            delete_folder(['uploaded_files'])
 
-
-async def upload_to_s3(file_location: str, filename: str):
+# Funções não precisam ser assíncronas porque boto3 é síncrono
+def upload_to_s3(file_location: str, filename: str):
     s3_client.upload_file(file_location, AWS_S3_BUCKET_NAME, f'uploads/{filename}')
 
-
-async def send_message_to_sqs(user: str, filename: str, start_time_for_cut_frames: int, end_time_for_cut_frames: int, skip_frame: int):
+def send_message_to_sqs(user: str, filename: str, start_time_for_cut_frames: int, end_time_for_cut_frames: int, skip_frame: int):
     dt = datetime.datetime.now()
     message = {
         "user": user,

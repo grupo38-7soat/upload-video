@@ -1,6 +1,6 @@
 import uvicorn as uvicorn
 from fastapi import FastAPI
-from src.services.file_upload import file_upload_router
+from services.file_upload import file_upload_router
 
 from constants.settings import HOST, PORT
 
@@ -17,7 +17,7 @@ app.include_router(file_upload_router)
 
 if __name__ == "__main__":
     uvicorn.run(
-        "src.app:app",
+        "app:app",
         host=HOST,
         port=PORT,
         log_level="info"
