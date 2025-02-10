@@ -2,7 +2,7 @@ import uvicorn as uvicorn
 from fastapi import FastAPI
 from src.services.file_upload import file_upload_router
 
-from src.settings import HOST, PORT
+from constants.settings import HOST, PORT
 
 
 app = FastAPI(
@@ -10,7 +10,6 @@ app = FastAPI(
     description="Serviço Upload de Vídeos",
     docs_url="/docs",
     redoc_url=None,
-
 )
 
 app.include_router(file_upload_router)

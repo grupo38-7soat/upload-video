@@ -1,60 +1,78 @@
 import datetime
 import json
-
-import boto3
-from fastapi import File, UploadFile, APIRouter
-from fastapi.responses import JSONResponse
 import os
 
-from src.settings import AWS_REGION, AWS_S3_BUCKET_NAME, QUEUE_URL
+import boto3
+from fastapi import File, UploadFile, APIRouter, Form
+from fastapi.responses import JSONResponse
+from constants.settings import AWS_REGION, AWS_S3_BUCKET_NAME
 from src.utils.exceptions import handle_default_error_exception
+from utils.delete_folder import delete_folder
 
 file_upload_router = APIRouter()
 
 s3_client = boto3.client(
     service_name='s3',
     region_name=AWS_REGION,
-    aws_access_key_id='AKIA3CMCCVYVNOZBNY5X',
-    aws_secret_access_key='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'
+    aws_access_key_id=os.getenv('ACCESS_KEY'),
+    aws_secret_access_key=os.getenv('SECRET_KEY')
 )
 
 sqs = boto3.client(
     service_name='sqs',
     region_name=AWS_REGION,
-    aws_access_key_id='AKIA3CMCCVYVNOZBNY5X',
-    aws_secret_access_key='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'
+    aws_access_key_id=os.getenv('ACCESS_KEY'),
+    aws_secret_access_key=os.getenv('SECRET_KEY')
 )
 
 
 @file_upload_router.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(
+    user: str = Form(...),
+    file: UploadFile = File(...),
+    start_time_for_cut_frames: int = Form(...),
+    end_time_for_cut_frames: int = Form(...),
+    skip_frame: int = Form(...)
+):
     file_location = f"./uploaded_files/{file.filename}"
-
     os.makedirs(os.path.dirname(file_location), exist_ok=True)
 
-    with open(file_location, "wb") as f:
-        f.write(await file.read())
+    try:
+        with open(file_location, "wb") as f:
+            content = await file.read()
+            f.write(content)
 
-        try:
-            s3_client.upload_file(file_location, AWS_S3_BUCKET_NAME, file.filename)
+        await upload_to_s3(file_location, file.filename)
+        message_id = await send_message_to_sqs(user, file.filename, start_time_for_cut_frames, end_time_for_cut_frames, skip_frame)
 
-            dt = datetime.datetime.now()
+        return JSONResponse(content={
+            "message": f"Vídeo {file.filename} importado com sucesso. MessageId: {message_id}",
+            "status_code": 200
+        })
 
-            message = {
-                "user": "user",
-                "video_name": file.filename,
-                "start_time": dt.strftime("%Y-%m-%d %H:%M:%S")
-            }
+    except Exception as e:
+        handle_default_error_exception(f"Erro no upload do arquivo {file.filename}. Mensagem: {e}")
+    finally:
+        delete_folder(['uploaded_files'])
 
-            message_body = json.dumps(message)
 
-            # Envia a mensagem para a fila SQS
-            response = sqs.send_message(
-                QueueUrl=QUEUE_URL,
-                MessageBody=message_body  # Send the JSON string as the message body
-            )
+async def upload_to_s3(file_location: str, filename: str):
+    s3_client.upload_file(file_location, AWS_S3_BUCKET_NAME, f'uploads/{filename}')
 
-            return JSONResponse(content={"message": f"Vídeo {file.filename} importado com sucesso. MessageId: {response.get('MessageId')}, status_code=200)"})
 
-        except Exception as e:
-            handle_default_error_exception(f"Erro no upload do arquivo {file.filename}. Mensagem: {e}")
+async def send_message_to_sqs(user: str, filename: str, start_time_for_cut_frames: int, end_time_for_cut_frames: int, skip_frame: int):
+    dt = datetime.datetime.now()
+    message = {
+        "user": user,
+        "video_name": filename,
+        "start_time_for_cut_frames": start_time_for_cut_frames,
+        "end_time_for_cut_frames": end_time_for_cut_frames,
+        "skip_frame": skip_frame,
+        "start_time": dt.strftime("%Y-%m-%d %H:%M:%S")
+    }
+    message_body = json.dumps(message)
+    response = sqs.send_message(
+        QueueUrl=os.getenv('QUEUE_URL'),
+        MessageBody=message_body
+    )
+    return response.get('MessageId')
