@@ -7,9 +7,10 @@ name = "pypi"
 boto3 = "*"
 fastapi = "*"
 uvicorn = "*"
-
+httpx = "*"
 
 [dev-packages]
+pytest = "*"
 
 [requires]
 python_version = "3.10"
