@@ -5,7 +5,7 @@ on:
       - develop
 
 env:
-  CLUSTER_NAME: "infra-hackathon"  # Nome do cluster EKS
+  CLUSTER_NAME: "FIAP-infra-hackathon"  # Nome do cluster EKS
   SONAR_REQUIRED_SCORE: 60  # Nome do cluster EKS
 
 jobs:
