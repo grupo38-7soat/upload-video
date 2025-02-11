@@ -3,12 +3,15 @@ import json
 import os
 
 import boto3
-from fastapi import File, UploadFile, APIRouter, Form
+from fastapi import File, UploadFile, APIRouter, Form, Header
 from fastapi.responses import JSONResponse
 from constants.settings import AWS_REGION, AWS_S3_BUCKET_NAME
 
 from utils.exceptions import handle_default_error_exception
 from utils.delete_folder import delete_folder
+
+from src.services.auth import JWTService
+from src.talkers.talkers import Talker
 
 file_upload_router = APIRouter()
 
@@ -26,14 +29,29 @@ sqs = boto3.client(
     aws_secret_access_key=os.getenv('SECRET_KEY')
 )
 
+
 @file_upload_router.post("/upload")
 async def upload_file(
-    user: str = Form(...),
+    token_jwt: str = Header(),
     file: UploadFile = File(...),
     start_time_for_cut_frames: int = Form(...),
     end_time_for_cut_frames: int = Form(...),
     skip_frame: int = Form(...)
 ):
+    # Decode do JWT
+    token = JWTService()
+    user_id = token.decode_jwt(token_jwt)
+
+    if not user_id:
+        handle_default_error_exception('Erro ao obter os dados do usuário.')
+
+    # Chama a API de consulta de usuário
+    talker = Talker()
+    find_user = await talker.retrieve_user(user_id)
+
+    if not find_user:
+        handle_default_error_exception('Usário não encontrado!')
+
     file_location = f"./uploaded_files/{file.filename}"
     os.makedirs(os.path.dirname(file_location), exist_ok=True)
 
@@ -47,7 +65,7 @@ async def upload_file(
         upload_to_s3(file_location, file.filename)
 
         # Enviar mensagem para SQS (sem await)
-        message_id = send_message_to_sqs(user, file.filename, start_time_for_cut_frames, end_time_for_cut_frames, skip_frame)
+        message_id = send_message_to_sqs(user_id, file.filename, start_time_for_cut_frames, end_time_for_cut_frames, skip_frame)
 
         # Responder antes de apagar o arquivo
         return JSONResponse(content={
@@ -65,14 +83,16 @@ async def upload_file(
         if os.path.exists(file_location):
             delete_folder(['uploaded_files'])
 
+
 # Funções não precisam ser assíncronas porque boto3 é síncrono
 def upload_to_s3(file_location: str, filename: str):
     s3_client.upload_file(file_location, AWS_S3_BUCKET_NAME, f'uploads/{filename}')
 
+
 def send_message_to_sqs(user: str, filename: str, start_time_for_cut_frames: int, end_time_for_cut_frames: int, skip_frame: int):
     dt = datetime.datetime.now()
     message = {
-        "user": user,
+        "user_id": user,
         "video_name": filename,
         "start_time_for_cut_frames": start_time_for_cut_frames,
         "end_time_for_cut_frames": end_time_for_cut_frames,

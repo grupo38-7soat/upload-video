@@ -33,6 +33,10 @@ spec:
             value: ${AWS_SECRET_ACCESS_KEY}
           - name: QUEUE_URL
             value: ${QUEUE_URL}
+          - name: USER_API_URL
+            value: ${USER_API_URL}
+          - name: JWT_SECRET
+            value: ${JWT_SECRET}
         resources:
           requests:
             memory: "128Mi"
