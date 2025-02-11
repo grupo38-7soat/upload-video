@@ -4,6 +4,7 @@ on:
       - main
       - fix
 
+
 env:
   CLUSTER_NAME: "FIAP-infra-hackathon"  # Nome do cluster EKS
   SONAR_REQUIRED_SCORE: 60  # Nome do cluster EKS
