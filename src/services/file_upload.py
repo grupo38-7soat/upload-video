@@ -10,8 +10,8 @@ from constants.settings import AWS_REGION, AWS_S3_BUCKET_NAME
 from utils.exceptions import handle_default_error_exception
 from utils.delete_folder import delete_folder
 
-from src.services.auth import JWTService
-from src.talkers.talkers import Talker
+from services.auth import JWTService
+from talkers.talkers import Talker
 
 file_upload_router = APIRouter()
 
