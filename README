@@ -1,2 +1,60 @@
 
+# Upload video
+Este é um projeto desenvolvido em Python e tem como objeto fazer validar a autenticação do usuário e fazer o upload dos vídeos escolhidos por ele.com o objetivo de extrair frames de um vídeo.
 
+## Objetivo
+O projeto permite o upload de um vídeo conforme as preferências do usuário. O sistema envia uma notificação ao usuário, informando o status da requisição.
+
+##  Executando a Aplicação
+#### Requisitos
+
+- Python 3.12
+- pip
+
+#### Instalação
+Para instalar as dependências necessárias, execute o seguinte comando apontando para o arquivo requirements.txt:
+```bash
+pip install -r requirements.txt
+````
+
+OBS: Caso haja alterações no projeto, é importante atualizar as dependências. Para isso, use o comando:
+````
+pip freeze > requirements.txt
+````
+
+####  Execução
+Para executar a aplicação, use o comando:
+
+```bash
+python src/app.py
+````
+
+##  Testes Unitários
+A aplicação inclui testes unitários, localizados na pasta tests. Esses testes utilizam o pytest e o pytest-cov para análise de cobertura de código. Para rodá-los, instale as dependências necessárias:
+````
+pip install pytest
+pip install pytest-cov
+````
+
+Para verificar a cobertura do código localmente, execute o comando abaixo:
+````
+coverage3 run -m pytest -v --cov=.
+````
+
+Para verificar os testes no SonarQube, execute os comandos do coverage para gerar o arquivo coverage.xml e depois rode o sonar-scanner:
+````
+coverage3 run -m pytest -v --cov=. --cov-report xml:coverage.xml
+sonar-scanner
+````
+
+## Deploy na AWS
+Para realizar o deploy na AWS, utilizamos o AWS SAM CLI (Serverless Application Model). O AWS SAM CLI facilita o processo de build e deploy de aplicações serverless.
+
+Comando para realizar o build da aplicação:
+````bash
+sam build --no-cached --debug
+````
+Comando para realizar o deploy da aplicação:
+````bash
+sam deploy --stack-name lambda-extract-frames --no-confirm-changeset --no-fail-on-empty-changeset --capabilities CAPABILITY_IAM
+````
