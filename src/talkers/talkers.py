@@ -21,4 +21,3 @@ class Talker:
                 else:
                     handle_default_error_exception('Erro ao retornar os dados usuário')
 
-
