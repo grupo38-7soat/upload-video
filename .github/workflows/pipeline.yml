@@ -2,8 +2,6 @@ on:
   push:
     branches:
       - main
-      - fix
-
 
 env:
   CLUSTER_NAME: "FIAP-infra-hackathon"  # Nome do cluster EKS
