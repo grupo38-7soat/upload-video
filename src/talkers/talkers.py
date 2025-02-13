@@ -1,7 +1,7 @@
 import os
 from aiohttp import ClientSession
 
-from src.utils.exceptions import handle_default_error_exception
+from utils.exceptions import handle_default_error_exception
 
 
 class Talker:

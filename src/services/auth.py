@@ -1,7 +1,7 @@
 import os
 import jwt
 
-from src.utils.exceptions import handle_unauthorized_exception
+from utils.exceptions import handle_unauthorized_exception
 
 
 class JWTService:
